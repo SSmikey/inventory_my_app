@@ -3,6 +3,16 @@ import 'package:provider/provider.dart';
 import '../api/auth_service.dart';
 import '../providers/auth_provider.dart';
 
+// ธีมสีส้มที่สบายตา
+class AppColors {
+  static const primaryOrange = Color(0xFFFF9966); // Coral Orange
+  static const secondaryOrange = Color(0xFFFFB347); // Peach Orange
+  static const darkOrange = Color(0xFFFF7043); // Deep Coral
+  static const lightOrange = Color(0xFFFFE0B2); // Light Peach
+  static const textDark = Color(0xFF4A4A4A);
+  static const textLight = Color(0xFFFFFFFF);
+}
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
 
@@ -40,15 +50,23 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError
+            ? Colors.red.shade400
+            : AppColors.primaryOrange,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
   void _login() async {
     if (_usernameController.text.trim().isEmpty ||
         _passwordController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("กรุณากรอกชื่อผู้ใช้และรหัสผ่าน"),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      _showSnackBar("กรุณากรอกชื่อผู้ใช้และรหัสผ่าน");
       return;
     }
 
@@ -60,53 +78,71 @@ class _LoginScreenState extends State<LoginScreen>
         _passwordController.text.trim(),
       );
 
-      // เก็บ token ใน AuthProvider
       await Provider.of<AuthProvider>(
         context,
         listen: false,
       ).login(data['access'], data['refresh']);
 
       if (!mounted) return;
-
-      // ไปหน้า Dashboard ด้วย Named Route
       Navigator.pushReplacementNamed(context, '/dashboard');
     } catch (e) {
       if (!mounted) return;
-
-      // ตัด prefix "Exception:" ออกไป ให้เหลือข้อความสั้น ๆ
       String errorMessage = e.toString().replaceFirst("Exception: ", "");
-
-      // ถ้า error เป็น response JSON ยาว ๆ ให้แปลงเป็นข้อความสั้น
       if (errorMessage.contains("Login failed")) {
         errorMessage = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
       }
+      _showSnackBar(errorMessage, isError: true);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          backgroundColor: Colors.red.shade400,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool obscureText = false,
+    Widget? suffixIcon,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      style: const TextStyle(color: AppColors.textDark, fontSize: 16),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
+        prefixIcon: Icon(icon, color: AppColors.primaryOrange),
+        suffixIcon: suffixIcon,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: AppColors.primaryOrange,
+            width: 2,
           ),
         ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+        filled: true,
+        fillColor: Colors.grey.shade50,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Colors.blue.shade400, Colors.purple.shade400],
+            colors: [AppColors.primaryOrange, AppColors.secondaryOrange],
           ),
         ),
         child: SafeArea(
@@ -118,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo/Icon
+                    // Logo
                     Container(
                       width: 100,
                       height: 100,
@@ -133,10 +169,10 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ],
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.inventory_2_rounded,
                         size: 50,
-                        color: Colors.blue.shade600,
+                        color: AppColors.darkOrange,
                       ),
                     ),
                     const SizedBox(height: 30),
@@ -145,9 +181,10 @@ class _LoginScreenState extends State<LoginScreen>
                     const Text(
                       "ยินดีต้อนรับ",
                       style: TextStyle(
-                        fontSize: 32,
+                        fontSize: 34,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
+                        letterSpacing: 0.5,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -155,7 +192,8 @@ class _LoginScreenState extends State<LoginScreen>
                       "เข้าสู่ระบบเพื่อจัดการสต็อกของคุณ",
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withOpacity(0.95),
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                     const SizedBox(height: 40),
@@ -177,84 +215,27 @@ class _LoginScreenState extends State<LoginScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Username Field
-                          TextField(
+                          _buildTextField(
                             controller: _usernameController,
-                            decoration: InputDecoration(
-                              labelText: "ชื่อผู้ใช้",
-                              prefixIcon: Icon(
-                                Icons.person_outline,
-                                color: Colors.blue.shade600,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.grey.shade300,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.grey.shade300,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.blue.shade600,
-                                  width: 2,
-                                ),
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey.shade50,
-                            ),
+                            label: "ชื่อผู้ใช้",
+                            icon: Icons.person_outline,
                           ),
                           const SizedBox(height: 16),
-
-                          // Password Field
-                          TextField(
+                          _buildTextField(
                             controller: _passwordController,
+                            label: "รหัสผ่าน",
+                            icon: Icons.lock_outline,
                             obscureText: _obscurePassword,
-                            decoration: InputDecoration(
-                              labelText: "รหัสผ่าน",
-                              prefixIcon: Icon(
-                                Icons.lock_outline,
-                                color: Colors.blue.shade600,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                color: Colors.grey.shade600,
                               ),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_off
-                                      : Icons.visibility,
-                                  color: Colors.grey.shade600,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _obscurePassword = !_obscurePassword;
-                                  });
-                                },
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
                               ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.grey.shade300,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.grey.shade300,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.blue.shade600,
-                                  width: 2,
-                                ),
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey.shade50,
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -265,10 +246,10 @@ class _LoginScreenState extends State<LoginScreen>
                             child: _isLoading
                                 ? Container(
                                     decoration: BoxDecoration(
-                                      gradient: LinearGradient(
+                                      gradient: const LinearGradient(
                                         colors: [
-                                          Colors.blue.shade400,
-                                          Colors.purple.shade400,
+                                          AppColors.primaryOrange,
+                                          AppColors.secondaryOrange,
                                         ],
                                       ),
                                       borderRadius: BorderRadius.circular(12),
@@ -294,10 +275,10 @@ class _LoginScreenState extends State<LoginScreen>
                                     ),
                                     child: Ink(
                                       decoration: BoxDecoration(
-                                        gradient: LinearGradient(
+                                        gradient: const LinearGradient(
                                           colors: [
-                                            Colors.blue.shade600,
-                                            Colors.purple.shade600,
+                                            AppColors.darkOrange,
+                                            AppColors.primaryOrange,
                                           ],
                                         ),
                                         borderRadius: BorderRadius.circular(12),
@@ -310,6 +291,7 @@ class _LoginScreenState extends State<LoginScreen>
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
                                             color: Colors.white,
+                                            letterSpacing: 0.5,
                                           ),
                                         ),
                                       ),
@@ -328,17 +310,16 @@ class _LoginScreenState extends State<LoginScreen>
                         Text(
                           "ยังไม่มีบัญชี? ",
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withOpacity(0.95),
                             fontSize: 16,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                         TextButton(
-                          onPressed: () {
-                            Navigator.pushReplacementNamed(
-                              context,
-                              '/register',
-                            );
-                          },
+                          onPressed: () => Navigator.pushReplacementNamed(
+                            context,
+                            '/register',
+                          ),
                           style: TextButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
@@ -353,6 +334,7 @@ class _LoginScreenState extends State<LoginScreen>
                               fontWeight: FontWeight.bold,
                               decoration: TextDecoration.underline,
                               decorationColor: Colors.white,
+                              decorationThickness: 2,
                             ),
                           ),
                         ),
