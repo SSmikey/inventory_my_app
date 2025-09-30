@@ -5,7 +5,7 @@ import '../providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 
 class ApiService {
-  final String baseUrl = "https://your-vercel-url.vercel.app/api";
+  final String baseUrl = "https://inventory-ctvh.vercel.app/api";
 
   Future<http.Response> get(BuildContext context, String endpoint) async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
