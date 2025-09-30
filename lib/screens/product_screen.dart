@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import '../api/product_service.dart';
+import '../models/product.dart';
+import '../widgets/product_item.dart';
 
 class ProductScreen extends StatefulWidget {
   const ProductScreen({Key? key}) : super(key: key);
@@ -10,11 +11,11 @@ class ProductScreen extends StatefulWidget {
 }
 
 class _ProductScreenState extends State<ProductScreen> {
-  List<Map<String, dynamic>> _products = [];
+  final ProductService _service = ProductService();
+  List<Product> _products = [];
   final nameController = TextEditingController();
   final priceController = TextEditingController();
-  final String apiBaseUrl = "https://your-vercel-url.vercel.app/api";
-  String token = ""; // ใส่ token ที่ login ได้
+  String token = ""; // 👉 ต้องใส่ token หลังจาก login
 
   @override
   void initState() {
@@ -23,56 +24,43 @@ class _ProductScreenState extends State<ProductScreen> {
   }
 
   Future<void> _loadProducts() async {
-    final response = await http.get(
-      Uri.parse("$apiBaseUrl/products/"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body) as List;
+    try {
+      final data = await _service.fetchProducts(token);
       setState(() {
-        _products = data.map((e) => e as Map<String, dynamic>).toList();
+        _products = data.map((e) => Product.fromJson(e)).toList();
       });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
     }
   }
 
   Future<void> _addProduct() async {
     if (nameController.text.isEmpty || priceController.text.isEmpty) return;
-
-    final response = await http.post(
-      Uri.parse("$apiBaseUrl/products/"),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-      body: jsonEncode({
+    try {
+      await _service.addProduct(token, {
         "name": nameController.text,
         "price": double.parse(priceController.text),
-      }),
-    );
-
-    if (response.statusCode == 201) {
+      });
       _loadProducts();
       nameController.clear();
       priceController.clear();
-    } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error: ${response.body}")));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
     }
   }
 
   Future<void> _deleteProduct(int id) async {
-    final response = await http.delete(
-      Uri.parse("$apiBaseUrl/products/$id/"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-
-    if (response.statusCode == 204) {
+    try {
+      await _service.deleteProduct(token, id);
       _loadProducts();
-    } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error deleting product")));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error deleting product")),
+      );
     }
   }
 
@@ -104,14 +92,10 @@ class _ProductScreenState extends State<ProductScreen> {
               child: ListView.builder(
                 itemCount: _products.length,
                 itemBuilder: (context, index) {
-                  final p = _products[index];
-                  return ListTile(
-                    title: Text("${p['name']}"),
-                    subtitle: Text("Price: ${p['price']}"),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _deleteProduct(p['id'] as int),
-                    ),
+                  final product = _products[index];
+                  return ProductItem(
+                    product: product,
+                    onDelete: () => _deleteProduct(product.id),
                   );
                 },
               ),
