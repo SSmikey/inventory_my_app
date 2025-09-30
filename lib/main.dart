@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'screens/login_screen.dart';
@@ -30,7 +31,11 @@ class MyApp extends StatelessWidget {
       builder: (context, auth, _) {
         return MaterialApp(
           title: 'Inventory App',
-          theme: ThemeData(primarySwatch: Colors.blue),
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+            textTheme:
+                GoogleFonts.promptTextTheme(), // เปลี่ยนเป็นฟอนต์ Prompt จาก Google Fonts
+          ),
           debugShowCheckedModeBanner: false,
           // กำหนดหน้าเริ่มต้นตาม token
           initialRoute: auth.accessToken != null ? '/dashboard' : '/login',
