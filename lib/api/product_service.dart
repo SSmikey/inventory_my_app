@@ -30,7 +30,11 @@ class ProductService {
     }
   }
 
-  Future<void> updateProduct(String token, int id, Map<String, dynamic> data) async {
+  Future<void> updateProduct(
+    String token,
+    int id,
+    Map<String, dynamic> data,
+  ) async {
     final response = await http.put(
       Uri.parse('$baseUrl/products/$id/'),
       headers: {
@@ -39,8 +43,9 @@ class ProductService {
       },
       body: jsonEncode(data),
     );
+
     if (response.statusCode != 200) {
-      throw Exception('Failed to update product');
+      throw Exception('Failed to update product: ${response.body}');
     }
   }
 

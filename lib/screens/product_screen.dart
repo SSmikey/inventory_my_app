@@ -26,21 +26,21 @@ class _ProductScreenState extends State<ProductScreen> {
   }
 
   Future<void> _loadProducts() async {
-  try {
-    final data = await _service.fetchProducts(widget.token);
-    setState(() {
-      _products = data.map((e) => Product(
-        id: int.tryParse(e['id'].toString()) ?? 0,
-        name: e['name'].toString(),
-        price: double.tryParse(e['price'].toString()) ?? 0.0,
-      )).toList();
-    });
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Error loading products: $e")),
-    );
+    try {
+      final data = await _service.fetchProducts(widget.token);
+      setState(() {
+        _products = data.map((e) => Product(
+          id: int.tryParse(e['id'].toString()) ?? 0,
+          name: e['name'].toString(),
+          price: double.tryParse(e['price'].toString()) ?? 0.0,
+        )).toList();
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error loading products: $e")),
+      );
+    }
   }
-}
 
   Future<void> _addProduct() async {
     if (nameController.text.isEmpty || priceController.text.isEmpty) return;
@@ -70,6 +70,53 @@ class _ProductScreenState extends State<ProductScreen> {
         SnackBar(content: Text("Error deleting product: $e")),
       );
     }
+  }
+
+  Future<void> _editProduct(Product product) async {
+    final editNameController = TextEditingController(text: product.name);
+    final editPriceController = TextEditingController(text: product.price.toString());
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Edit Product"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: editNameController,
+              decoration: const InputDecoration(labelText: "Name"),
+            ),
+            TextField(
+              controller: editPriceController,
+              decoration: const InputDecoration(labelText: "Price"),
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await _service.updateProduct(widget.token, product.id, {
+                  "name": editNameController.text,
+                  "price": double.parse(editPriceController.text),
+                });
+                Navigator.pop(context);
+                await _loadProducts();
+                widget.reloadCallback?.call(); // รีโหลด dashboard
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Error updating product: $e")),
+                );
+              }
+            },
+            child: const Text("Save"),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -104,6 +151,7 @@ class _ProductScreenState extends State<ProductScreen> {
                   return ProductItem(
                     product: product,
                     onDelete: () => _deleteProduct(product.id),
+                    onEdit: () => _editProduct(product), // เพิ่ม callback edit
                   );
                 },
               ),
