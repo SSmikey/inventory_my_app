@@ -1,6 +1,16 @@
 import 'package:flutter/material.dart';
 import '../api/auth_service.dart';
 
+// ธีมสีส้มที่สบายตา (เหมือนกับ login_screen.dart)
+class AppColors {
+  static const primaryOrange = Color(0xFFFF9966); // Coral Orange
+  static const secondaryOrange = Color(0xFFFFB347); // Peach Orange
+  static const darkOrange = Color(0xFFFF7043); // Deep Coral
+  static const lightOrange = Color(0xFFFFE0B2); // Light Peach
+  static const textDark = Color(0xFF4A4A4A);
+  static const textLight = Color(0xFFFFFFFF);
+}
+
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
 
@@ -46,41 +56,50 @@ class _RegisterScreenState extends State<RegisterScreen>
     super.dispose();
   }
 
+  void _showSnackBar(
+    String message, {
+    bool isError = false,
+    bool isSuccess = false,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: isSuccess
+            ? Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Text(message),
+                ],
+              )
+            : Text(message),
+        backgroundColor: isError
+            ? Colors.red.shade400
+            : isSuccess
+            ? Colors.green.shade400
+            : AppColors.primaryOrange,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
   void _register() async {
     // Validation
     if (_usernameController.text.trim().isEmpty ||
         _passwordController.text.trim().isEmpty ||
         _confirmPasswordController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("กรุณากรอกข้อมูลให้ครบทุกช่อง"),
-          backgroundColor: Colors.orange,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      _showSnackBar("กรุณากรอกข้อมูลให้ครบทุกช่อง");
       return;
     }
 
     if (_passwordController.text.trim() !=
         _confirmPasswordController.text.trim()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("รหัสผ่านไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง"),
-          backgroundColor: Colors.orange,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      _showSnackBar("รหัสผ่านไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง");
       return;
     }
 
     if (_passwordController.text.trim().length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร"),
-          backgroundColor: Colors.orange,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      _showSnackBar("รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร");
       return;
     }
 
@@ -92,61 +111,73 @@ class _RegisterScreenState extends State<RegisterScreen>
         _passwordController.text.trim(),
       );
 
-      // สมัครสำเร็จ → กลับไปหน้า Login
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 12),
-              Text("สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ"),
-            ],
-          ),
-          backgroundColor: Colors.green.shade400,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
+      _showSnackBar("สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ", isSuccess: true);
       Navigator.pushReplacementNamed(context, '/login');
     } catch (e) {
       if (!mounted) return;
       String errorMessage = e.toString().replaceFirst("Exception: ", "");
 
-      // ปรับข้อความ error ให้เข้าใจง่าย
       if (errorMessage.contains("already exists") ||
           errorMessage.contains("duplicate")) {
-        errorMessage = "ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาเลือกชื่ือื่น";
+        errorMessage = "ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาเลือกชื่อื่น";
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          backgroundColor: Colors.red.shade400,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+      _showSnackBar(errorMessage, isError: true);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    String? hintText,
+    bool obscureText = false,
+    Widget? suffixIcon,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      style: const TextStyle(color: AppColors.textDark, fontSize: 16),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hintText,
+        labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
+        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+        prefixIcon: Icon(icon, color: AppColors.primaryOrange),
+        suffixIcon: suffixIcon,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: AppColors.primaryOrange,
+            width: 2,
           ),
         ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+        filled: true,
+        fillColor: Colors.grey.shade50,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topRight,
             end: Alignment.bottomLeft,
-            colors: [Colors.purple.shade400, Colors.pink.shade400],
+            colors: [AppColors.secondaryOrange, AppColors.primaryOrange],
           ),
         ),
         child: SafeArea(
@@ -160,7 +191,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Logo/Icon
+                      // Logo
                       Container(
                         width: 100,
                         height: 100,
@@ -175,10 +206,10 @@ class _RegisterScreenState extends State<RegisterScreen>
                             ),
                           ],
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.person_add_rounded,
                           size: 50,
-                          color: Colors.purple.shade600,
+                          color: AppColors.darkOrange,
                         ),
                       ),
                       const SizedBox(height: 30),
@@ -187,9 +218,10 @@ class _RegisterScreenState extends State<RegisterScreen>
                       const Text(
                         "สร้างบัญชีใหม่",
                         style: TextStyle(
-                          fontSize: 32,
+                          fontSize: 34,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
+                          letterSpacing: 0.5,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -197,7 +229,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                         "กรอกข้อมูลเพื่อเริ่มต้นใช้งาน",
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withOpacity(0.95),
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                       const SizedBox(height: 40),
@@ -219,136 +252,49 @@ class _RegisterScreenState extends State<RegisterScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // Username Field
-                            TextField(
+                            _buildTextField(
                               controller: _usernameController,
-                              decoration: InputDecoration(
-                                labelText: "ชื่อผู้ใช้",
-                                hintText: "เลือกชื่อผู้ใช้ของคุณ",
-                                prefixIcon: Icon(
-                                  Icons.person_outline,
-                                  color: Colors.purple.shade600,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey.shade300,
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey.shade300,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.purple.shade600,
-                                    width: 2,
-                                  ),
-                                ),
-                                filled: true,
-                                fillColor: Colors.grey.shade50,
-                              ),
+                              label: "ชื่อผู้ใช้",
+                              icon: Icons.person_outline,
+                              hintText: "เลือกชื่อผู้ใช้ของคุณ",
                             ),
                             const SizedBox(height: 16),
-
-                            // Password Field
-                            TextField(
+                            _buildTextField(
                               controller: _passwordController,
+                              label: "รหัสผ่าน",
+                              icon: Icons.lock_outline,
+                              hintText: "อย่างน้อย 6 ตัวอักษร",
                               obscureText: _obscurePassword,
-                              decoration: InputDecoration(
-                                labelText: "รหัสผ่าน",
-                                hintText: "อย่างน้อย 6 ตัวอักษร",
-                                prefixIcon: Icon(
-                                  Icons.lock_outline,
-                                  color: Colors.purple.shade600,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: Colors.grey.shade600,
                                 ),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword
-                                        ? Icons.visibility_off
-                                        : Icons.visibility,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscurePassword = !_obscurePassword;
-                                    });
-                                  },
+                                onPressed: () => setState(
+                                  () => _obscurePassword = !_obscurePassword,
                                 ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey.shade300,
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey.shade300,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.purple.shade600,
-                                    width: 2,
-                                  ),
-                                ),
-                                filled: true,
-                                fillColor: Colors.grey.shade50,
                               ),
                             ),
                             const SizedBox(height: 16),
-
-                            // Confirm Password Field
-                            TextField(
+                            _buildTextField(
                               controller: _confirmPasswordController,
+                              label: "ยืนยันรหัสผ่าน",
+                              icon: Icons.lock_outline,
+                              hintText: "กรอกรหัสผ่านอีกครั้ง",
                               obscureText: _obscureConfirmPassword,
-                              decoration: InputDecoration(
-                                labelText: "ยืนยันรหัสผ่าน",
-                                hintText: "กรอกรหัสผ่านอีกครั้ง",
-                                prefixIcon: Icon(
-                                  Icons.lock_outline,
-                                  color: Colors.purple.shade600,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscureConfirmPassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: Colors.grey.shade600,
                                 ),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscureConfirmPassword
-                                        ? Icons.visibility_off
-                                        : Icons.visibility,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscureConfirmPassword =
-                                          !_obscureConfirmPassword;
-                                    });
-                                  },
+                                onPressed: () => setState(
+                                  () => _obscureConfirmPassword =
+                                      !_obscureConfirmPassword,
                                 ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey.shade300,
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey.shade300,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.purple.shade600,
-                                    width: 2,
-                                  ),
-                                ),
-                                filled: true,
-                                fillColor: Colors.grey.shade50,
                               ),
                             ),
                             const SizedBox(height: 24),
@@ -359,10 +305,10 @@ class _RegisterScreenState extends State<RegisterScreen>
                               child: _isLoading
                                   ? Container(
                                       decoration: BoxDecoration(
-                                        gradient: LinearGradient(
+                                        gradient: const LinearGradient(
                                           colors: [
-                                            Colors.purple.shade400,
-                                            Colors.pink.shade400,
+                                            AppColors.primaryOrange,
+                                            AppColors.secondaryOrange,
                                           ],
                                         ),
                                         borderRadius: BorderRadius.circular(12),
@@ -390,10 +336,10 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       ),
                                       child: Ink(
                                         decoration: BoxDecoration(
-                                          gradient: LinearGradient(
+                                          gradient: const LinearGradient(
                                             colors: [
-                                              Colors.purple.shade600,
-                                              Colors.pink.shade600,
+                                              AppColors.darkOrange,
+                                              AppColors.primaryOrange,
                                             ],
                                           ),
                                           borderRadius: BorderRadius.circular(
@@ -408,6 +354,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                               fontSize: 18,
                                               fontWeight: FontWeight.bold,
                                               color: Colors.white,
+                                              letterSpacing: 0.5,
                                             ),
                                           ),
                                         ),
@@ -426,14 +373,16 @@ class _RegisterScreenState extends State<RegisterScreen>
                           Text(
                             "มีบัญชีอยู่แล้ว? ",
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withOpacity(0.95),
                               fontSize: 16,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                           TextButton(
-                            onPressed: () {
-                              Navigator.pushReplacementNamed(context, '/login');
-                            },
+                            onPressed: () => Navigator.pushReplacementNamed(
+                              context,
+                              '/login',
+                            ),
                             style: TextButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
@@ -448,6 +397,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 fontWeight: FontWeight.bold,
                                 decoration: TextDecoration.underline,
                                 decorationColor: Colors.white,
+                                decorationThickness: 2,
                               ),
                             ),
                           ),
