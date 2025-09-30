@@ -5,7 +5,8 @@ import '../models/dashboard.dart';
 import '../api/dashboard_service.dart';
 import '../providers/auth_provider.dart';
 import '../screens/product_screen.dart';
-import '../screens/stock_screen.dart';
+import 'stock_list_screen.dart';
+import 'transaction_history_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -25,7 +26,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _service = DashboardService();
-    // ใช้ addPostFrameCallback เพื่อให้ context ใช้งานได้ใน initState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       _token = auth.accessToken!;
@@ -56,11 +56,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // สร้างหน้าแต่ละ tab หลังจากมี token
     final pages = [
       _buildDashboardPage(),
       ProductScreen(token: _token, reloadCallback: _fetchDashboard),
-      StockScreen(token: _token, reloadCallback: _fetchDashboard),
+      StockListScreen(token: _token, reloadCallback: _fetchDashboard),
+      TransactionHistoryScreen(token: _token),
     ];
 
     return Scaffold(
@@ -83,6 +83,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: "Dashboard"),
           BottomNavigationBarItem(icon: Icon(Icons.book), label: "Products"),
           BottomNavigationBarItem(icon: Icon(Icons.inventory), label: "Stock"),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
         ],
       ),
     );
@@ -105,13 +106,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          _buildCard(
-              "Total Revenue", "\$${_dashboard!.totalRevenue.toStringAsFixed(2)}", Colors.orange),
+          _buildCard("Total Revenue", "\$${_dashboard!.totalRevenue.toStringAsFixed(2)}", Colors.orange),
           const SizedBox(height: 24),
-          const Text(
-            "Last 7 Days Stock",
-            style: TextStyle(fontSize: 18),
-          ),
+          const Text("Last 7 Days Stock", style: TextStyle(fontSize: 18)),
           const SizedBox(height: 16),
           Expanded(child: _buildChart()),
         ],
@@ -128,8 +125,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Text(title, style: TextStyle(fontSize: 16, color: color)),
             const SizedBox(height: 8),
-            Text(value,
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+            Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
           ],
         ),
       ),
@@ -137,27 +133,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildChart() {
-    if (_dashboard!.chartData.isEmpty) {
-      return const Center(child: Text("No chart data"));
-    }
+    if (_dashboard!.chartData.isEmpty) return const Center(child: Text("No chart data"));
 
     return LineChart(
       LineChartData(
         gridData: FlGridData(show: true),
         titlesData: FlTitlesData(
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(showTitles: true),
-          ),
+          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (value, meta) {
                 int index = value.toInt();
                 if (index >= 0 && index < _dashboard!.chartData.length) {
-                  return Text(
-                    _dashboard!.chartData[index].date.split('-').last,
-                    style: const TextStyle(fontSize: 12),
-                  );
+                  return Text(_dashboard!.chartData[index].date.split('-').last, style: const TextStyle(fontSize: 12));
                 }
                 return const Text("");
               },
@@ -168,18 +157,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         borderData: FlBorderData(show: true),
         lineBarsData: [
           LineChartBarData(
-            spots: _dashboard!.chartData.asMap().entries.map((e) {
-              return FlSpot(e.key.toDouble(), e.value.stockIn.toDouble());
-            }).toList(),
+            spots: _dashboard!.chartData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.stockIn.toDouble())).toList(),
             isCurved: true,
             color: Colors.green,
             barWidth: 3,
             dotData: FlDotData(show: true),
           ),
           LineChartBarData(
-            spots: _dashboard!.chartData.asMap().entries.map((e) {
-              return FlSpot(e.key.toDouble(), e.value.stockOut.toDouble());
-            }).toList(),
+            spots: _dashboard!.chartData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.stockOut.toDouble())).toList(),
             isCurved: true,
             color: Colors.red,
             barWidth: 3,
