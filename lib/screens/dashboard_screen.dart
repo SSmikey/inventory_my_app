@@ -1,171 +1,138 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:fl_chart/fl_chart.dart';
+import '../models/dashboard.dart';
+import '../api/dashboard_service.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  final String token; // รับ token จาก login
+
+  const DashboardScreen({Key? key, required this.token}) : super(key: key);
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
+  _DashboardScreenState createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int totalProducts = 0;
-  int totalStockIn = 0;
-  int totalStockOut = 0;
-  double totalRevenue = 0;
-  List<Map<String, dynamic>> chartData = [];
-
-  bool isLoading = true;
-
-  // TODO: ดึง token จาก login จริง
-  String token = ""; // ใส่ token ของผู้ใช้จริง
+  late DashboardService _service;
+  Dashboard? _dashboard;
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    fetchDashboardData();
+    _service = DashboardService();
+    _fetchData();
   }
 
-  Future<void> fetchDashboardData() async {
-    const url = "https://YOUR_BACKEND_URL/api/dashboard/";
+  Future<void> _fetchData() async {
     try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {"Authorization": "Bearer $token"},
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        setState(() {
-          totalProducts = data['total_products'] ?? 0;
-          totalStockIn = data['total_stock_in'] ?? 0;
-          totalStockOut = data['total_stock_out'] ?? 0;
-          totalRevenue = (data['total_revenue'] ?? 0).toDouble();
-          chartData = (data['chart_data'] as List<dynamic>? ?? [])
-              .map((e) => Map<String, dynamic>.from(e))
-              .toList();
-          isLoading = false;
-        });
-      } else {
-        debugPrint("Error fetching dashboard: ${response.statusCode}");
-        setState(() => isLoading = false);
-      }
+      final data = await _service.fetchDashboard(widget.token);
+      setState(() {
+        _dashboard = data;
+        _loading = false;
+      });
     } catch (e) {
-      debugPrint("Exception fetching dashboard: $e");
-      setState(() => isLoading = false);
-    }
-  }
-
-  List<BarChartGroupData> _generateBarChartData() {
-    return chartData.asMap().entries.map((entry) {
-      final index = entry.key;
-      final data = entry.value;
-      final inVal = (data['in'] ?? 0).toDouble();
-      final outVal = (data['out'] ?? 0).toDouble();
-      return BarChartGroupData(
-        x: index,
-        barRods: [
-          BarChartRodData(toY: inVal, color: Colors.green),
-          BarChartRodData(toY: outVal, color: Colors.red),
-        ],
+      setState(() {
+        _loading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading dashboard: $e')),
       );
-    }).toList();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Dashboard")),
-      body: isLoading
+      body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Summary cards
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          : _dashboard == null
+              ? const Center(child: Text("No data"))
+              : Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
                     children: [
-                      _buildSummaryCard(
-                          "Products", totalProducts.toString(), Colors.blue),
-                      _buildSummaryCard(
-                          "Stock In", totalStockIn.toString(), Colors.green),
-                      _buildSummaryCard(
-                          "Stock Out", totalStockOut.toString(), Colors.red),
+                      // สรุปตัวเลข
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildCard("Total Products", _dashboard!.totalProducts.toString(), Colors.blue),
+                          _buildCard("Stock In", _dashboard!.totalStockIn.toString(), Colors.green),
+                          _buildCard("Stock Out", _dashboard!.totalStockOut.toString(), Colors.red),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      _buildCard("Total Revenue", "\$${_dashboard!.totalRevenue.toStringAsFixed(2)}", Colors.orange),
+                      const SizedBox(height: 24),
+                      const Text("Last 7 Days Stock", style: TextStyle(fontSize: 18)),
+                      const SizedBox(height: 16),
+                      Expanded(child: _buildChart()),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  _buildSummaryCard(
-                      "Revenue", "\$${totalRevenue.toStringAsFixed(2)}", Colors.purple),
-                  const SizedBox(height: 20),
-
-                  // Bar chart
-                  Text(
-                    "Last 7 days transactions",
-                    style: Theme.of(context).textTheme.headline6,
-                  ),
-                  const SizedBox(height: 12),
-                  chartData.isEmpty
-                      ? const Text("No chart data")
-                      : SizedBox(
-                          height: 300,
-                          child: BarChart(
-                            BarChartData(
-                              barGroups: _generateBarChartData(),
-                              titlesData: FlTitlesData(
-                                bottomTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    getTitlesWidget: (value, meta) {
-                                      int index = value.toInt();
-                                      if (index >= 0 && index < chartData.length) {
-                                        final date = chartData[index]['date']?.toString() ?? '';
-                                        return Text(date.length >= 5 ? date.substring(5) : date);
-                                      }
-                                      return const Text("");
-                                    },
-                                  ),
-                                ),
-                                leftTitles: AxisTitles(
-                                  sideTitles: SideTitles(showTitles: true),
-                                ),
-                              ),
-                              borderData: FlBorderData(show: false),
-                              gridData: FlGridData(show: true),
-                            ),
-                          ),
-                        ),
-                ],
-              ),
-            ),
+                ),
     );
   }
 
-  Widget _buildSummaryCard(String title, String value, Color color) {
+  Widget _buildCard(String title, String value, Color color) {
     return Card(
-      color: color,
-      child: SizedBox(
-        width: 100,
-        height: 80,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(title, style: const TextStyle(color: Colors.white)),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-            ],
+      color: color.withOpacity(0.2),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Text(title, style: TextStyle(fontSize: 16, color: color)),
+            const SizedBox(height: 8),
+            Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChart() {
+    if (_dashboard!.chartData.isEmpty) {
+      return const Center(child: Text("No chart data"));
+    }
+
+    return LineChart(
+      LineChartData(
+        gridData: FlGridData(show: true),
+        titlesData: FlTitlesData(
+          leftTitles: SideTitles(showTitles: true),
+          bottomTitles: SideTitles(
+            showTitles: true,
+            getTitlesWidget: (value, meta) {
+              int index = value.toInt();
+              if (index >= 0 && index < _dashboard!.chartData.length) {
+                return Text(_dashboard!.chartData[index].date.split('-').last);
+              }
+              return const Text("");
+            },
+            reservedSize: 32,
           ),
         ),
+        borderData: FlBorderData(show: true),
+        lineBarsData: [
+          LineChartBarData(
+            spots: _dashboard!.chartData.asMap().entries.map((e) {
+              return FlSpot(e.key.toDouble(), e.value.stockIn.toDouble());
+            }).toList(),
+            isCurved: true,
+            color: Colors.green,
+            barWidth: 3,
+            dotData: FlDotData(show: true),
+          ),
+          LineChartBarData(
+            spots: _dashboard!.chartData.asMap().entries.map((e) {
+              return FlSpot(e.key.toDouble(), e.value.stockOut.toDouble());
+            }).toList(),
+            isCurved: true,
+            color: Colors.red,
+            barWidth: 3,
+            dotData: FlDotData(show: true),
+          ),
+        ],
       ),
     );
   }
