@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/dashboard.dart';
 
 class DashboardService {
-  final String baseUrl = "https://your-vercel-domain.vercel.app/api";
+  final String baseUrl = "https://inventory-ctvh.vercel.app/api";
 
   Future<Dashboard> fetchDashboard(String token) async {
     final response = await http.get(

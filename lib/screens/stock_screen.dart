@@ -3,7 +3,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class StockScreen extends StatefulWidget {
-  const StockScreen({Key? key}) : super(key: key);
+  final String token;
+  final VoidCallback? reloadCallback; // callback เรียกหลังเพิ่มรายการ
+
+  const StockScreen({Key? key, required this.token, this.reloadCallback}) : super(key: key);
 
   @override
   _StockScreenState createState() => _StockScreenState();
@@ -17,8 +20,7 @@ class _StockScreenState extends State<StockScreen> {
   String type = 'IN';
   final quantityController = TextEditingController();
 
-  final String apiBaseUrl = "https://your-vercel-url.vercel.app/api";
-  String token = ""; // ใส่ token ที่ login ได้
+  final String apiBaseUrl = "https://inventory-ctvh.vercel.app/api";
 
   @override
   void initState() {
@@ -28,53 +30,74 @@ class _StockScreenState extends State<StockScreen> {
   }
 
   Future<void> _loadProducts() async {
-    final response = await http.get(
-      Uri.parse("$apiBaseUrl/products/"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body) as List;
-      setState(() {
-        _products = data.map((e) => e as Map<String, dynamic>).toList();
-      });
+    try {
+      final response = await http.get(
+        Uri.parse("$apiBaseUrl/products/"),
+        headers: {"Authorization": "Bearer ${widget.token}"},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as List;
+        setState(() {
+          _products = data.map((e) => e as Map<String, dynamic>).toList();
+        });
+      } else {
+        throw Exception("Failed to load products");
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error loading products: $e")),
+      );
     }
   }
 
   Future<void> _loadTransactions() async {
-    final response = await http.get(
-      Uri.parse("$apiBaseUrl/stock/"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body) as List;
-      setState(() {
-        _transactions = data.map((e) => e as Map<String, dynamic>).toList();
-      });
+    try {
+      final response = await http.get(
+        Uri.parse("$apiBaseUrl/stock/"),
+        headers: {"Authorization": "Bearer ${widget.token}"},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as List;
+        setState(() {
+          _transactions = data.map((e) => e as Map<String, dynamic>).toList();
+        });
+      } else {
+        throw Exception("Failed to load transactions");
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error loading transactions: $e")),
+      );
     }
   }
 
   Future<void> _addTransaction() async {
     if (selectedProductId == null || quantityController.text.isEmpty) return;
 
-    final response = await http.post(
-      Uri.parse("$apiBaseUrl/stock/"),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token"
-      },
-      body: jsonEncode({
-        "product": selectedProductId,
-        "type": type,
-        "quantity": int.parse(quantityController.text),
-      }),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse("$apiBaseUrl/stock/"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer ${widget.token}",
+        },
+        body: jsonEncode({
+          "product": selectedProductId,
+          "type": type,
+          "quantity": int.parse(quantityController.text),
+        }),
+      );
 
-    if (response.statusCode == 201) {
-      _loadTransactions();
-      quantityController.clear();
-    } else {
+      if (response.statusCode == 201) {
+        quantityController.clear();
+        await _loadTransactions();
+        widget.reloadCallback?.call(); // รีโหลด dashboard
+      } else {
+        throw Exception("Failed to add transaction: ${response.body}");
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: ${response.body}")),
+        SnackBar(content: Text("Error: $e")),
       );
     }
   }

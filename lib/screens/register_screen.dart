@@ -23,12 +23,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _passwordController.text,
       );
 
+      // เก็บ token ใน AuthProvider
       await Provider.of<AuthProvider>(context, listen: false)
           .login(data['access'], data['refresh']);
 
+      // ไปหน้า Dashboard
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => DashboardScreen()),
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -42,17 +44,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Register")),
+      appBar: AppBar(title: const Text("Register")),
       body: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            TextField(controller: _usernameController, decoration: InputDecoration(labelText: "Username")),
-            TextField(controller: _passwordController, decoration: InputDecoration(labelText: "Password"), obscureText: true),
-            SizedBox(height: 20),
+            TextField(
+              controller: _usernameController,
+              decoration: const InputDecoration(labelText: "Username"),
+            ),
+            TextField(
+              controller: _passwordController,
+              decoration: const InputDecoration(labelText: "Password"),
+              obscureText: true,
+            ),
+            const SizedBox(height: 20),
             _isLoading
-                ? CircularProgressIndicator()
-                : ElevatedButton(onPressed: _register, child: Text("Register")),
+                ? const CircularProgressIndicator()
+                : ElevatedButton(onPressed: _register, child: const Text("Register")),
           ],
         ),
       ),

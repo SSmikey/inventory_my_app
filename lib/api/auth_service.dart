@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  final String baseUrl = "https://your-vercel-domain.vercel.app/api";
+  final String baseUrl = "https://inventory-ctvh.vercel.app/api";
 
   Future<Map<String, dynamic>> login(String username, String password) async {
     final response = await http.post(

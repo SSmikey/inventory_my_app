@@ -4,7 +4,10 @@ import '../models/product.dart';
 import '../widgets/product_item.dart';
 
 class ProductScreen extends StatefulWidget {
-  const ProductScreen({Key? key}) : super(key: key);
+  final String token;
+  final VoidCallback? reloadCallback; // callback สำหรับรีโหลด dashboard
+
+  const ProductScreen({Key? key, required this.token, this.reloadCallback}) : super(key: key);
 
   @override
   _ProductScreenState createState() => _ProductScreenState();
@@ -15,7 +18,6 @@ class _ProductScreenState extends State<ProductScreen> {
   List<Product> _products = [];
   final nameController = TextEditingController();
   final priceController = TextEditingController();
-  String token = ""; // 👉 ต้องใส่ token หลังจาก login
 
   @override
   void initState() {
@@ -24,42 +26,48 @@ class _ProductScreenState extends State<ProductScreen> {
   }
 
   Future<void> _loadProducts() async {
-    try {
-      final data = await _service.fetchProducts(token);
-      setState(() {
-        _products = data.map((e) => Product.fromJson(e)).toList();
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
-    }
+  try {
+    final data = await _service.fetchProducts(widget.token);
+    setState(() {
+      _products = data.map((e) => Product(
+        id: int.tryParse(e['id'].toString()) ?? 0,
+        name: e['name'].toString(),
+        price: double.tryParse(e['price'].toString()) ?? 0.0,
+      )).toList();
+    });
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Error loading products: $e")),
+    );
   }
+}
 
   Future<void> _addProduct() async {
     if (nameController.text.isEmpty || priceController.text.isEmpty) return;
     try {
-      await _service.addProduct(token, {
+      await _service.addProduct(widget.token, {
         "name": nameController.text,
         "price": double.parse(priceController.text),
       });
-      _loadProducts();
       nameController.clear();
       priceController.clear();
+      await _loadProducts(); // รีโหลดข้อมูล
+      widget.reloadCallback?.call(); // รีโหลด dashboard
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
+        SnackBar(content: Text("Error adding product: $e")),
       );
     }
   }
 
   Future<void> _deleteProduct(int id) async {
     try {
-      await _service.deleteProduct(token, id);
-      _loadProducts();
+      await _service.deleteProduct(widget.token, id);
+      await _loadProducts(); // รีโหลดข้อมูลหลังลบ
+      widget.reloadCallback?.call(); // รีโหลด dashboard
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error deleting product")),
+        SnackBar(content: Text("Error deleting product: $e")),
       );
     }
   }

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ProductService {
-  final String baseUrl = "https://your-vercel-domain.vercel.app/api";
+  final String baseUrl = "https://inventory-ctvh.vercel.app/api";
 
   Future<List<dynamic>> fetchProducts(String token) async {
     final response = await http.get(
