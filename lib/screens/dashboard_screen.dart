@@ -25,8 +25,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _service = DashboardService();
+    // ใช้ addPostFrameCallback เพื่อให้ context ใช้งานได้ใน initState
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _token = Provider.of<AuthProvider>(context, listen: false).accessToken!;
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      _token = auth.accessToken!;
       _fetchDashboard();
     });
   }
@@ -41,8 +43,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
     } catch (e) {
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error loading dashboard: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading dashboard: $e')),
+      );
     }
   }
 
@@ -53,16 +56,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // สร้างหน้าแต่ละ tab หลังจากมี token
     final pages = [
       _buildDashboardPage(),
-      ProductScreen(
-        token: _token,
-        reloadCallback: _fetchDashboard,
-      ),
-      StockScreen(
-        token: _token,
-        reloadCallback: _fetchDashboard,
-      ),
+      ProductScreen(token: _token, reloadCallback: _fetchDashboard),
+      StockScreen(token: _token, reloadCallback: _fetchDashboard),
     ];
 
     return Scaffold(

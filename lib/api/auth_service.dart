@@ -13,8 +13,10 @@ class AuthService {
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
+    } else if (response.statusCode == 401) {
+      throw Exception('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
     } else {
-      throw Exception('Login failed: ${response.body}');
+      throw Exception('Login failed');
     }
   }
 
@@ -26,9 +28,17 @@ class AuthService {
     );
 
     if (response.statusCode == 201) {
-      return jsonDecode(response.body);
+      // สมัครสำเร็จ → ไม่ต้องส่ง token ออกมา
+      return {"success": true};
+    } else if (response.statusCode == 400) {
+      // ถ้าชื่อซ้ำหรือข้อมูลไม่ครบ
+      final body = jsonDecode(response.body);
+      if (body['username'] != null) {
+        throw Exception('ชื่อผู้ใช้นี้ถูกใช้แล้ว');
+      }
+      throw Exception('ข้อมูลไม่ถูกต้อง');
     } else {
-      throw Exception('Register failed: ${response.body}');
+      throw Exception('Register failed');
     }
   }
 }

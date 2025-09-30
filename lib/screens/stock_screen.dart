@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 
 class StockScreen extends StatefulWidget {
-  final String token;
   final VoidCallback? reloadCallback; // callback เรียกหลังเพิ่มรายการ
 
-  const StockScreen({Key? key, required this.token, this.reloadCallback}) : super(key: key);
+  const StockScreen({Key? key, this.reloadCallback, required String token}) : super(key: key);
 
   @override
   _StockScreenState createState() => _StockScreenState();
@@ -29,11 +30,16 @@ class _StockScreenState extends State<StockScreen> {
     _loadTransactions();
   }
 
+  Future<String> _getToken() async {
+    return Provider.of<AuthProvider>(context, listen: false).accessToken!;
+  }
+
   Future<void> _loadProducts() async {
     try {
+      final token = await _getToken();
       final response = await http.get(
         Uri.parse("$apiBaseUrl/products/"),
-        headers: {"Authorization": "Bearer ${widget.token}"},
+        headers: {"Authorization": "Bearer $token"},
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as List;
@@ -52,9 +58,10 @@ class _StockScreenState extends State<StockScreen> {
 
   Future<void> _loadTransactions() async {
     try {
+      final token = await _getToken();
       final response = await http.get(
         Uri.parse("$apiBaseUrl/stock/"),
-        headers: {"Authorization": "Bearer ${widget.token}"},
+        headers: {"Authorization": "Bearer $token"},
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as List;
@@ -75,11 +82,12 @@ class _StockScreenState extends State<StockScreen> {
     if (selectedProductId == null || quantityController.text.isEmpty) return;
 
     try {
+      final token = await _getToken();
       final response = await http.post(
         Uri.parse("$apiBaseUrl/stock/"),
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer ${widget.token}",
+          "Authorization": "Bearer $token",
         },
         body: jsonEncode({
           "product": selectedProductId,
@@ -114,7 +122,7 @@ class _StockScreenState extends State<StockScreen> {
               value: selectedProductId,
               items: _products
                   .map((p) => DropdownMenuItem(
-                        value: p['id'] as int,
+                        value: int.tryParse(p['id'].toString()),
                         child: Text(p['name'].toString()),
                       ))
                   .toList(),

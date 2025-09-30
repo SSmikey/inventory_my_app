@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../api/auth_service.dart';
-import '../providers/auth_provider.dart';
-import 'dashboard_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({Key? key}) : super(key: key);
+
   @override
   _RegisterScreenState createState() => _RegisterScreenState();
 }
@@ -18,23 +17,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
     try {
       final authService = AuthService();
-      final data = await authService.register(
-        _usernameController.text,
-        _passwordController.text,
+      await authService.register(
+        _usernameController.text.trim(),
+        _passwordController.text.trim(),
       );
 
-      // เก็บ token ใน AuthProvider
-      await Provider.of<AuthProvider>(context, listen: false)
-          .login(data['access'], data['refresh']);
-
-      // ไปหน้า Dashboard
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
-      );
-    } catch (e) {
+      // สมัครสำเร็จ → กลับไปหน้า Login
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+        const SnackBar(content: Text("สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ")),
+      );
+      Navigator.pushReplacementNamed(context, '/login');
+    } catch (e) {
+      if (!mounted) return;
+      String errorMessage = e.toString().replaceFirst("Exception: ", "");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
       );
     } finally {
       setState(() => _isLoading = false);
@@ -61,7 +59,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 20),
             _isLoading
                 ? const CircularProgressIndicator()
-                : ElevatedButton(onPressed: _register, child: const Text("Register")),
+                : ElevatedButton(
+                    onPressed: _register,
+                    child: const Text("Register"),
+                  ),
+            TextButton(
+              onPressed: () {
+                Navigator.pushReplacementNamed(context, '/login');
+              },
+              child: const Text("Back to Login"),
+            ),
           ],
         ),
       ),

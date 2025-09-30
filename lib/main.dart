@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
 import 'screens/dashboard_screen.dart';
 
 void main() async {
@@ -30,9 +31,14 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           title: 'Inventory App',
           theme: ThemeData(primarySwatch: Colors.blue),
-          home: auth.accessToken != null
-              ? const DashboardScreen()
-              : LoginScreen(),
+          debugShowCheckedModeBanner: false,
+          // กำหนดหน้าเริ่มต้นตาม token
+          initialRoute: auth.accessToken != null ? '/dashboard' : '/login',
+          routes: {
+            '/login': (context) => const LoginScreen(),
+            '/register': (context) => const RegisterScreen(),
+            '/dashboard': (context) => const DashboardScreen(),
+          },
         );
       },
     );
