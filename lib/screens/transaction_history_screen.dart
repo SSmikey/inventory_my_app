@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
 
 class TransactionHistoryScreen extends StatefulWidget {
   final String token;
@@ -31,6 +29,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
       );
       if (response.statusCode == 200) {
         final data = (jsonDecode(response.body) as List).reversed.toList(); // เรียงล่าสุดก่อน
+        if (!mounted) return; // ✅ ป้องกัน setState หลัง dispose
         setState(() {
           _transactions = data.map((e) => e as Map<String, dynamic>).toList();
         });
@@ -38,6 +37,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
         throw Exception("Failed to load transactions");
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error loading transactions: $e")),
       );
@@ -58,7 +58,9 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                   final t = _transactions[index];
                   return ListTile(
                     title: Text("${t['product_name']}"),
-                    subtitle: Text("Type: ${t['type']} | Qty: ${t['quantity']} | Date: ${t['date']}"),
+                    subtitle: Text(
+                      "Type: ${t['type']} | Qty: ${t['quantity']} | Date: ${t['date']}",
+                    ),
                   );
                 },
               ),

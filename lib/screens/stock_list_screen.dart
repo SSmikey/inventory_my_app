@@ -6,7 +6,8 @@ class StockListScreen extends StatefulWidget {
   final String token;
   final VoidCallback? reloadCallback;
 
-  const StockListScreen({Key? key, required this.token, this.reloadCallback}) : super(key: key);
+  const StockListScreen({Key? key, required this.token, this.reloadCallback})
+      : super(key: key);
 
   @override
   _StockListScreenState createState() => _StockListScreenState();
@@ -29,6 +30,9 @@ class _StockListScreenState extends State<StockListScreen> {
         Uri.parse("$apiBaseUrl/stock/summary/"),
         headers: {"Authorization": "Bearer ${widget.token}"},
       );
+
+      if (!mounted) return; // ✅ widget ถูก dispose ห้าม setState
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as List;
         setState(() {
@@ -38,6 +42,7 @@ class _StockListScreenState extends State<StockListScreen> {
         throw Exception("Failed to load stock: ${response.body}");
       }
     } catch (e) {
+      if (!mounted) return; // ✅ ป้องกัน SnackBar หลัง dispose
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error loading stock: $e")),
       );
@@ -60,13 +65,16 @@ class _StockListScreenState extends State<StockListScreen> {
         }),
       );
 
+      if (!mounted) return; // ✅
+
       if (response.statusCode == 201) {
-        await _loadStock();
-        widget.reloadCallback?.call();
+        await _loadStock(); // โหลดใหม่หลังอัปเดต
+        widget.reloadCallback?.call(); // รีโหลด Dashboard
       } else {
         throw Exception("Failed to update stock: ${response.body}");
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
       );
@@ -77,6 +85,8 @@ class _StockListScreenState extends State<StockListScreen> {
   void _showStockDialog(Map<String, dynamic> product) {
     int quantity = 0;
     String type = 'IN';
+
+    if (!mounted) return; // ✅
 
     showDialog(
       context: context,
@@ -103,13 +113,18 @@ class _StockListScreenState extends State<StockListScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              if (!mounted) return;
+              Navigator.pop(context);
+            },
             child: const Text("Cancel"),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               if (quantity > 0) {
-                _updateStock(product['product_id'], type, quantity);
+                await _updateStock(product['product_id'], type, quantity);
+
+                if (!mounted) return; // ✅ ป้องกัน Navigator.pop หลัง dispose
                 Navigator.pop(context);
               }
             },
@@ -135,7 +150,10 @@ class _StockListScreenState extends State<StockListScreen> {
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 8),
                     child: ListTile(
-                      title: Text(s['product_name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                      title: Text(
+                        s['product_name'],
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       subtitle: Text("Quantity: ${s['quantity'] ?? 0}"),
                       trailing: IconButton(
                         icon: const Icon(Icons.edit, color: Colors.blue),
@@ -147,5 +165,10 @@ class _StockListScreenState extends State<StockListScreen> {
               ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 }
