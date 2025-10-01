@@ -26,11 +26,11 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   Future<void> _loadTransactions() async {
     try {
       final response = await http.get(
-        Uri.parse("$apiBaseUrl/stock/"), // API transaction history
+        Uri.parse("$apiBaseUrl/stock/"),
         headers: {"Authorization": "Bearer ${widget.token}"},
       );
       if (response.statusCode == 200) {
-        final data = (jsonDecode(response.body) as List).reversed.toList(); // เรียงล่าสุดก่อน
+        final data = (jsonDecode(response.body) as List).reversed.toList();
         setState(() {
           _transactions = data.map((e) => e as Map<String, dynamic>).toList();
         });
@@ -44,24 +44,105 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     }
   }
 
+  Color getTypeColor(String type) {
+    switch (type) {
+      case 'in':
+        return Colors.orange;
+      case 'out':
+        return Colors.grey;
+      default:
+        return Colors.white;
+    }
+  }
+
+  IconData getTypeIcon(String type) {
+    switch (type) {
+      case 'in':
+        return Icons.arrow_downward;
+      case 'out':
+        return Icons.arrow_upward;
+      default:
+        return Icons.info_outline;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("History")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: _transactions.isEmpty
-            ? const Center(child: Text("No transaction data"))
-            : ListView.builder(
-                itemCount: _transactions.length,
-                itemBuilder: (context, index) {
-                  final t = _transactions[index];
-                  return ListTile(
-                    title: Text("${t['product_name']}"),
-                    subtitle: Text("Type: ${t['type']} | Qty: ${t['quantity']} | Date: ${t['date']}"),
-                  );
-                },
-              ),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text("History"),
+        backgroundColor: Colors.orange,
+        elevation: 2,
+        foregroundColor: Colors.white,
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.white, Colors.grey.shade100],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: _transactions.isEmpty
+              ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.history, size: 64, color: Colors.orange),
+                    const SizedBox(height: 16),
+                    const Text("No transaction data",
+                        style: TextStyle(fontSize: 18, color: Colors.grey)),
+                  ],
+                )
+              : ListView.builder(
+                  itemCount: _transactions.length,
+                  itemBuilder: (context, index) {
+                    final t = _transactions[index];
+                    return Card(
+                      elevation: 4,
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: getTypeColor(t['type']),
+                          child: Icon(
+                            getTypeIcon(t['type']),
+                            color: Colors.white,
+                          ),
+                        ),
+                        title: Text(
+                          "${t['product_name']}",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange,
+                          ),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Type: ${t['type'].toUpperCase()}",
+                              style: TextStyle(
+                                color: getTypeColor(t['type']),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              "Qty: ${t['quantity']} | Date: ${t['date']}",
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                        trailing: const Icon(Icons.chevron_right, color: Colors.orange),
+                      ),
+                    );
+                  },
+                ),
+        ),
       ),
     );
   }
