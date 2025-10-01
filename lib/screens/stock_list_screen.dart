@@ -12,14 +12,25 @@ class StockListScreen extends StatefulWidget {
   _StockListScreenState createState() => _StockListScreenState();
 }
 
-class _StockListScreenState extends State<StockListScreen> {
+class _StockListScreenState extends State<StockListScreen> with SingleTickerProviderStateMixin {
   List<Map<String, dynamic>> _stocks = [];
   final String apiBaseUrl = "https://inventory-ctvh.vercel.app/api";
+  late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
     _loadStock();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   Future<void> _loadStock() async {
@@ -88,6 +99,13 @@ class _StockListScreenState extends State<StockListScreen> {
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.orange.withOpacity(0.1),
+                blurRadius: 12,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -136,6 +154,7 @@ class _StockListScreenState extends State<StockListScreen> {
                       backgroundColor: Colors.orange,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 4,
                     ),
                     onPressed: () {
                       if (quantity > 0) {
@@ -184,35 +203,93 @@ class _StockListScreenState extends State<StockListScreen> {
                         style: TextStyle(fontSize: 18, color: Colors.grey)),
                   ],
                 )
-              : ListView.builder(
+              : ListView.separated(
                   itemCount: _stocks.length,
+                  separatorBuilder: (context, idx) => Divider(
+                    color: Colors.grey.shade300,
+                    height: 1,
+                  ),
                   itemBuilder: (context, index) {
                     final s = _stocks[index];
-                    return Card(
-                      elevation: 5,
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                    return SlideTransition(
+                      position: Tween<Offset>(
+                        begin: Offset(1, 0),
+                        end: Offset(0, 0),
+                      ).animate(
+                        CurvedAnimation(
+                          parent: _controller..forward(),
+                          curve: Interval(index / _stocks.length, 1.0, curve: Curves.easeOut),
+                        ),
                       ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.orange,
-                          child: Icon(Icons.inventory, color: Colors.white),
+                      child: Card(
+                        elevation: 8,
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
                         ),
-                        title: Text(
-                          s['product_name'],
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.orange,
-                          ),
-                        ),
-                        subtitle: Text(
-                          "Quantity: ${s['quantity'] ?? 0}",
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.orange),
-                          onPressed: () => _showStockDialog(s),
+                        child: Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.orange.withOpacity(0.07),
+                                    Colors.white
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                            ),
+                            Positioned(
+                              right: 16,
+                              top: 16,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  "ID: ${s['product_id']}",
+                                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                                ),
+                              ),
+                            ),
+                            ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: Colors.orange,
+                                child: Icon(Icons.inventory, color: Colors.white),
+                              ),
+                              title: Text(
+                                s['product_name'],
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange,
+                                ),
+                              ),
+                              subtitle: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade200,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      "Quantity: ${s['quantity'] ?? 0}",
+                                      style: const TextStyle(color: Colors.grey),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.orange),
+                                onPressed: () => _showStockDialog(s),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );
