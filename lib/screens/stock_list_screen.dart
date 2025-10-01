@@ -22,7 +22,6 @@ class _StockListScreenState extends State<StockListScreen> {
     _loadStock();
   }
 
-  // โหลด stock จาก backend (StockSummaryView)
   Future<void> _loadStock() async {
     try {
       final response = await http.get(
@@ -44,7 +43,6 @@ class _StockListScreenState extends State<StockListScreen> {
     }
   }
 
-  // เพิ่ม / ลด stock
   Future<void> _updateStock(int productId, String type, int quantity) async {
     try {
       final response = await http.post(
@@ -73,49 +71,85 @@ class _StockListScreenState extends State<StockListScreen> {
     }
   }
 
-  // Dialog เพิ่ม / ลด stock
   void _showStockDialog(Map<String, dynamic> product) {
     int quantity = 0;
     String type = 'IN';
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Update Stock: ${product['product_name']}"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButtonFormField<String>(
-              value: type,
-              items: const [
-                DropdownMenuItem(value: 'IN', child: Text("Stock In")),
-                DropdownMenuItem(value: 'OUT', child: Text("Stock Out")),
-              ],
-              onChanged: (v) => type = v ?? 'IN',
-              decoration: const InputDecoration(labelText: "Type"),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.white, Colors.orange.shade50],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            TextFormField(
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: "Quantity"),
-              onChanged: (v) => quantity = int.tryParse(v) ?? 0,
-            ),
-          ],
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.edit, color: Colors.orange, size: 40),
+              const SizedBox(height: 8),
+              Text("Update Stock: ${product['product_name']}",
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.orange)),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: type,
+                items: const [
+                  DropdownMenuItem(value: 'IN', child: Text("Stock In")),
+                  DropdownMenuItem(value: 'OUT', child: Text("Stock Out")),
+                ],
+                onChanged: (v) => type = v ?? 'IN',
+                decoration: InputDecoration(
+                  labelText: "Type",
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: "Quantity",
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onChanged: (v) => quantity = int.tryParse(v) ?? 0,
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () {
+                      if (quantity > 0) {
+                        _updateStock(product['product_id'], type, quantity);
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: const Text("Save"),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (quantity > 0) {
-                _updateStock(product['product_id'], type, quantity);
-                Navigator.pop(context);
-              }
-            },
-            child: const Text("Save"),
-          ),
-        ],
       ),
     );
   }
@@ -123,28 +157,68 @@ class _StockListScreenState extends State<StockListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Stock list")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: _stocks.isEmpty
-            ? const Center(child: Text("No stock data"))
-            : ListView.builder(
-                itemCount: _stocks.length,
-                itemBuilder: (context, index) {
-                  final s = _stocks[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    child: ListTile(
-                      title: Text(s['product_name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text("Quantity: ${s['quantity'] ?? 0}"),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () => _showStockDialog(s),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text("Stock list"),
+        backgroundColor: Colors.orange,
+        foregroundColor: Colors.white,
+        elevation: 2,
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.white, Colors.grey.shade100],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: _stocks.isEmpty
+              ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.inventory_2, size: 64, color: Colors.orange),
+                    const SizedBox(height: 16),
+                    const Text("No stock data",
+                        style: TextStyle(fontSize: 18, color: Colors.grey)),
+                  ],
+                )
+              : ListView.builder(
+                  itemCount: _stocks.length,
+                  itemBuilder: (context, index) {
+                    final s = _stocks[index];
+                    return Card(
+                      elevation: 5,
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                    ),
-                  );
-                },
-              ),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.orange,
+                          child: Icon(Icons.inventory, color: Colors.white),
+                        ),
+                        title: Text(
+                          s['product_name'],
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange,
+                          ),
+                        ),
+                        subtitle: Text(
+                          "Quantity: ${s['quantity'] ?? 0}",
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.orange),
+                          onPressed: () => _showStockDialog(s),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
       ),
     );
   }
