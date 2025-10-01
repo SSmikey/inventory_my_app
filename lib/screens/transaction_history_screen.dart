@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'dart:ui';
 
 class TransactionHistoryScreen extends StatefulWidget {
   final String token;
@@ -133,25 +134,38 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> wit
                           curve: Interval(index / _transactions.length, 1.0, curve: Curves.easeOut),
                         ),
                       ),
-                      child: Card(
-                        elevation: 8,
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
-                        ),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(18),
+                        splashColor: Colors.orange.withOpacity(0.2),
+                        onTap: () {
+                          // สามารถเพิ่มฟังก์ชันเมื่อแตะรายการได้
+                        },
                         child: Stack(
                           children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    getTypeColor(t['type']).withOpacity(0.08),
-                                    Colors.white
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(18),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        getTypeColor(t['type']).withOpacity(0.12),
+                                        Colors.white.withOpacity(0.7)
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(18),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.orange.withOpacity(0.08),
+                                        blurRadius: 12,
+                                        offset: Offset(0, 8),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                borderRadius: BorderRadius.circular(18),
                               ),
                             ),
                             Positioned(
@@ -170,11 +184,14 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> wit
                               ),
                             ),
                             ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: getTypeColor(t['type']),
-                                child: Icon(
-                                  getTypeIcon(t['type']),
-                                  color: Colors.white,
+                              leading: Tooltip(
+                                message: t['type'] == 'in' ? 'Stock In' : 'Stock Out',
+                                child: CircleAvatar(
+                                  backgroundColor: getTypeColor(t['type']),
+                                  child: Icon(
+                                    getTypeIcon(t['type']),
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                               title: Text(
