@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:provider/provider.dart';
-import '../providers/auth_provider.dart';
+import 'package:intl/intl.dart';
 
 class TransactionHistoryScreen extends StatefulWidget {
   final String token;
@@ -13,14 +12,25 @@ class TransactionHistoryScreen extends StatefulWidget {
   _TransactionHistoryScreenState createState() => _TransactionHistoryScreenState();
 }
 
-class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
+class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> with SingleTickerProviderStateMixin {
   List<Map<String, dynamic>> _transactions = [];
   final String apiBaseUrl = "https://inventory-ctvh.vercel.app/api";
+  late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
     _loadTransactions();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   Future<void> _loadTransactions() async {
@@ -66,6 +76,15 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     }
   }
 
+  String formatDate(String dateStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      return DateFormat('dd/MM/yyyy HH:mm').format(date);
+    } catch (_) {
+      return dateStr;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -96,48 +115,108 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                         style: TextStyle(fontSize: 18, color: Colors.grey)),
                   ],
                 )
-              : ListView.builder(
+              : ListView.separated(
                   itemCount: _transactions.length,
+                  separatorBuilder: (context, idx) => Divider(
+                    color: Colors.grey.shade300,
+                    height: 1,
+                  ),
                   itemBuilder: (context, index) {
                     final t = _transactions[index];
-                    return Card(
-                      elevation: 4,
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                    return SlideTransition(
+                      position: Tween<Offset>(
+                        begin: Offset(1, 0),
+                        end: Offset(0, 0),
+                      ).animate(
+                        CurvedAnimation(
+                          parent: _controller..forward(),
+                          curve: Interval(index / _transactions.length, 1.0, curve: Curves.easeOut),
+                        ),
                       ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: getTypeColor(t['type']),
-                          child: Icon(
-                            getTypeIcon(t['type']),
-                            color: Colors.white,
-                          ),
+                      child: Card(
+                        elevation: 8,
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
                         ),
-                        title: Text(
-                          "${t['product_name']}",
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.orange,
-                          ),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Stack(
                           children: [
-                            Text(
-                              "Type: ${t['type'].toUpperCase()}",
-                              style: TextStyle(
-                                color: getTypeColor(t['type']),
-                                fontWeight: FontWeight.w500,
+                            Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    getTypeColor(t['type']).withOpacity(0.08),
+                                    Colors.white
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(18),
                               ),
                             ),
-                            Text(
-                              "Qty: ${t['quantity']} | Date: ${t['date']}",
-                              style: const TextStyle(color: Colors.grey),
+                            Positioned(
+                              right: 16,
+                              top: 16,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: getTypeColor(t['type']),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  formatDate(t['date']),
+                                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                                ),
+                              ),
+                            ),
+                            ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: getTypeColor(t['type']),
+                                child: Icon(
+                                  getTypeIcon(t['type']),
+                                  color: Colors.white,
+                                ),
+                              ),
+                              title: Text(
+                                "${t['product_name']}",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: getTypeColor(t['type']).withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          "Type: ${t['type'].toUpperCase()}",
+                                          style: TextStyle(
+                                            color: getTypeColor(t['type']),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        "Qty: ${t['quantity']}",
+                                        style: const TextStyle(color: Colors.grey),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              trailing: const Icon(Icons.chevron_right, color: Colors.orange),
                             ),
                           ],
                         ),
-                        trailing: const Icon(Icons.chevron_right, color: Colors.orange),
                       ),
                     );
                   },
