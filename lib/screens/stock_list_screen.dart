@@ -309,9 +309,4 @@ class _StockListScreenState extends State<StockListScreen> with SingleTickerProv
       ),
     );
   }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
 }
