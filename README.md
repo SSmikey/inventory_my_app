@@ -295,7 +295,7 @@ flutter build web --release
 
 ```dart
 class ApiService {
-  static const String baseUrl = 'https://your-api-domain.com/api';
+  static const String baseUrl = 'https://inventory-ctvh.vercel.app/api';
   
   // กำหนด endpoints
   static const String loginEndpoint = '$baseUrl/auth/login';
@@ -362,7 +362,7 @@ class ApiService {
 
 ### 🖥️ หน้าจอหลักของแอปพลิเคชัน
 
-![หน้าจอแอป](./assets/images/Inventory.png)
+![หน้าจอแอป](./assets/imges/Inventory.png)
 
 ---
 
@@ -380,50 +380,18 @@ class ApiService {
 
 ## 👥 ทีมผู้พัฒนา
 
-<div align="center">
+**ทีมผู้พัฒนา:**
 
-### 🎓 Computer Science Students
+- 👨‍💻 นายสิทธิชัย แสงนนท์ 6612732134
+- 👨‍💻 นายพีรพัฒน์ สุทธปัญญา 6612732121
+- �‍💻 นางสาววาสินี มาฤทธิ์ 6712732126
+- 👩‍💻 นางสาววรัญญา ฉิมงาม 6712732125
 
-<table>
-<tr>
-<td align="center" width="25%">
-<img src="https://ui-avatars.com/api/?name=Sitthichai&size=100&background=FF9800&color=fff" width="100" style="border-radius: 50%;">
-<br>
-<b>นายสิทธิชัย แสงนนท์</b>
-<br>
-<code>6612732134</code>
-<br>
-👨‍💻 Developer
-</td>
-<td align="center" width="25%">
-<img src="https://ui-avatars.com/api/?name=Peeraphat&size=100&background=FF9800&color=fff" width="100" style="border-radius: 50%;">
-<br>
-<b>นายพีรพัฒน์ สุทธปัญญา</b>
-<br>
-<code>6612732121</code>
-<br>
-👨‍💻 Developer
-</td>
-<td align="center" width="25%">
-<img src="https://ui-avatars.com/api/?name=Wasinee&size=100&background=FF9800&color=fff" width="100" style="border-radius: 50%;">
-<br>
-<b>นางสาววาสินี มาฤทธิ์</b>
-<br>
-<code>6712732126</code>
-<br>
-👩‍💻 Developer
-</td>
-<td align="center" width="25%">
-<img src="https://ui-avatars.com/api/?name=Waranya&size=100&background=FF9800&color=fff" width="100" style="border-radius: 50%;">
-<br>
-<b>นางสาววรัญญา ฉิมงาม</b>
-<br>
-<code>6712732125</code>
-<br>
-👩‍💻 Developer
-</td>
-</tr>
-</table>
+---
+
+**สาขาวิชาวิทยาการคอมพิวเตอร์**  
+คณะวิทยาศาสตร์และเทคโนโลยี  
+🎓 **มหาวิทยาลัยราชภัฏศรีสะเกษ**
 
 ---
 
@@ -436,52 +404,6 @@ class ApiService {
 [![University](https://img.shields.io/badge/SSRU-Sisaket_Rajabhat_University-FF9800?style=for-the-badge)](https://www.ssru.ac.th)
 
 </div>
-
----
-
-## 🤝 การสนับสนุนโปรเจกต์
-
-### 🐛 พบ Bug หรือมีข้อเสนอแนะ?
-
-หากคุณพบปัญหาหรือมีไอเดียในการพัฒนา สามารถแจ้งได้ที่:
-
-- 📧 **Email:** [your-email@example.com](mailto:your-email@example.com)
-- 🐛 **Issues:** [GitHub Issues](https://github.com/your-username/inventory_my_app/issues)
-- 💬 **Discussions:** [GitHub Discussions](https://github.com/your-username/inventory_my_app/discussions)
-
-### ⭐ ถ้าชอบโปรเจกต์นี้
-
-ช่วยกด Star ⭐ ให้โปรเจกต์นี้บน GitHub เพื่อเป็นกำลังใจให้ทีมพัฒนานะครับ!
-
-### 🔗 Links
-
-- 📖 **Documentation:** [Wiki](https://github.com/your-username/inventory_my_app/wiki)
-- 🎥 **Video Tutorial:** [YouTube](https://youtube.com)
-- 🌐 **Live Demo:** [Demo Site](https://your-demo-site.com)
-
----
-
-## 📋 Roadmap
-
-### ✅ เวอร์ชันปัจจุบัน (v1.0.0)
-- [x] ระบบ Login/Register
-- [x] Dashboard แสดงข้อมูล
-- [x] จัดการสินค้า (CRUD)
-- [x] จัดการสต็อก
-- [x] ประวัติการทำรายการ
-
-### 🚧 กำลังพัฒนา (v1.1.0)
-- [ ] ระบบ Multi-language (TH/EN)
-- [ ] Export รายงานเป็น PDF/Excel
-- [ ] Dark Mode Support
-- [ ] Offline Mode ด้วย Local Database
-
-### 🔮 แผนอนาคต (v2.0.0)
-- [ ] ระบบแจ้งเตือน Push Notification
-- [ ] รองรับ Barcode/QR Code Scanner
-- [ ] ระบบรายงานขั้นสูง
-- [ ] Mobile App Release บน Store
-
 
 ---
 
