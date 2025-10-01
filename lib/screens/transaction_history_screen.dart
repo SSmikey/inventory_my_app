@@ -49,6 +49,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> wit
         throw Exception("Failed to load transactions");
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error loading transactions: $e")),
       );

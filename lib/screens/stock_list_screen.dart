@@ -6,7 +6,8 @@ class StockListScreen extends StatefulWidget {
   final String token;
   final VoidCallback? reloadCallback;
 
-  const StockListScreen({Key? key, required this.token, this.reloadCallback}) : super(key: key);
+  const StockListScreen({Key? key, required this.token, this.reloadCallback})
+      : super(key: key);
 
   @override
   _StockListScreenState createState() => _StockListScreenState();
@@ -39,6 +40,9 @@ class _StockListScreenState extends State<StockListScreen> with SingleTickerProv
         Uri.parse("$apiBaseUrl/stock/summary/"),
         headers: {"Authorization": "Bearer ${widget.token}"},
       );
+
+      if (!mounted) return; // ✅ widget ถูก dispose ห้าม setState
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as List;
         setState(() {
@@ -48,6 +52,7 @@ class _StockListScreenState extends State<StockListScreen> with SingleTickerProv
         throw Exception("Failed to load stock: ${response.body}");
       }
     } catch (e) {
+      if (!mounted) return; // ✅ ป้องกัน SnackBar หลัง dispose
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error loading stock: $e")),
       );
@@ -69,13 +74,16 @@ class _StockListScreenState extends State<StockListScreen> with SingleTickerProv
         }),
       );
 
+      if (!mounted) return; // ✅
+
       if (response.statusCode == 201) {
-        await _loadStock();
-        widget.reloadCallback?.call();
+        await _loadStock(); // โหลดใหม่หลังอัปเดต
+        widget.reloadCallback?.call(); // รีโหลด Dashboard
       } else {
         throw Exception("Failed to update stock: ${response.body}");
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
       );
@@ -85,6 +93,8 @@ class _StockListScreenState extends State<StockListScreen> with SingleTickerProv
   void _showStockDialog(Map<String, dynamic> product) {
     int quantity = 0;
     String type = 'IN';
+
+    if (!mounted) return; // ✅
 
     showDialog(
       context: context,
@@ -298,5 +308,10 @@ class _StockListScreenState extends State<StockListScreen> with SingleTickerProv
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 }
