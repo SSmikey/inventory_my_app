@@ -14,7 +14,7 @@
 
 ---
 
-![หน้าจอแอป](./assets/images/Inventory.png)
+![หน้าจอแอป](./assets/images/all_Inventory.png)
 
 </div>
 
@@ -165,7 +165,13 @@ inventory_my_app/
 │
 ├── 🎨 assets/                     # Asset Files
 │   └── images/
-│       └── Inventory.png
+│       └── 1 Login.png
+│       └── 2 Register.png
+│       └── 3 Dashboard.png
+│       └── 4 Products.png
+│       └── 5 Stocks.png
+│       └── 6 History.png
+│       └── all_Inventory.png
 │
 ├── 📄 pubspec.yaml               # Dependencies & Assets Config
 ├── 🔍 analysis_options.yaml      # Linter Rules
